@@ -1,0 +1,68 @@
+scriptId = 'edu.stanford.myo.boxing'
+scriptTitle = "Boxing Script"
+scriptDetailsUrl = ""
+
+locked = true
+myo.setLockingPolicy("none")
+appTitle = ""
+
+function onForegroundWindowChange(app, title)
+    myo.debug("onForegroundWindowChange: " .. app .. ", " .. title)
+	appTitle = title
+    return true
+end
+
+function activeAppName()
+	return appTitle
+end
+
+function onPoseEdge(pose, edge)
+	myo.debug("onPoseEdge: " .. pose .. ": " .. edge)
+	
+	pose = conditionallySwapWave(pose)
+	
+    if (pose ~= "rest" and pose ~= "unknown") then
+        -- hold if edge is on, oo o ooooommm timed if edge is off
+        myo.unlock(edge == "off" and "timed" or "hold")
+    end
+    
+    local keyEdge = edge == "off" and "up" or "down"
+    
+    x, y, z = myo.getAccel()
+    strength = x*x + y*y + z*z
+    strength = math.sqrt(strength)
+    yawn = myo.getYaw()
+    pitch = myo.getPitch()
+    roll = myo.getRoll()
+    arm = myo.getArm()
+    myo.debug(arm .. " arm")
+    if (pose == "fingersSpread" ) then
+        myo.debug("  block   " )
+	myo.keyboard("space", keyEdgme)
+    elseif (strength < 1.3 and roll > 0.5 and pose ~= "rest") then
+        myo.debug("  uppercut   " .. strength)
+        key = (arm == "left" and "n" or "m")
+	myo.keyboard(key, keyEdge)
+    --myo.debug("  yaw = " .. yawn .. "    pitch = " .. pitch .. "  roll = " .. roll)
+    elseif (strength < 1.8 and roll < 0) then
+        myo.debug("  jab  " .. strength)
+        key = (arm == "left" and "i" or "o")
+	myo.keyboard(key, keyEdge)
+    elseif (strength > 1.8) then
+        myo.debug("  hook  " .. strength)
+        key = (arm == "left" and "j" or "k")
+	myo.keyboard(key, keyEdge)
+    end
+    --myo.debug("x = " .. x .. ", y = " .. y .. ", z = " .. z)
+end
+
+function conditionallySwapWave(pose)
+	if myo.getArm() == "left" then
+        if pose == "waveIn" then
+            pose = "waveOut"
+        elseif pose == "waveOut" then
+            pose = "waveIn"
+        end
+    end
+    return pose
+end
